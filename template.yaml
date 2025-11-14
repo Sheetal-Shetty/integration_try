@@ -122,16 +122,16 @@ spec:
   # -------------------------------
   # 🚀 BAREMETAL (ANSIBLE)
   # -------------------------------
-  - id: call-baremetal-template
-    if: ${{ parameters.stack == 'Baremetal' }}
-    name: Execute Baremetal Deployment Flow
-    action: scaffolder:template
-    input:
-      templateRef: ./child-ansible-baremetal.yaml
-      values:
-        Github_URL: ${{ parameters.Github_URL }}
-        PlaybookPath: ${{ parameters.extraFields.PlaybookPath }}
-        HostsPath: ${{ parameters.extraFields.HostsPath }}
+  # - id: call-baremetal-template
+  #   if: ${{ parameters.stack == 'Baremetal' }}
+  #   name: Execute Baremetal Deployment Flow
+  #   action: scaffolder:template
+  #   input:
+  #     templateRef: ./child-ansible-baremetal.yaml
+  #     values:
+  #       Github_URL: ${{ parameters.Github_URL }}
+  #       PlaybookPath: ${{ parameters.extraFields.PlaybookPath }}
+  #       HostsPath: ${{ parameters.extraFields.HostsPath }}
   - id: docker-template
     if: ${{ parameters.method == 'Docker' }}
     name: Call Docker Child Template
@@ -173,12 +173,24 @@ spec:
     # -----------------------------------------------------
     # Kubernetes Child Template Execution
     # -----------------------------------------------------
-  - id: kubernetes-template
-    if: ${{ parameters.method == 'Kubernetes' }}
-    name: Call Kubernetes Child Template
-    action: scaffolder:template
+  # - id: kubernetes-template
+  #   if: ${{ parameters.method == 'Kubernetes' }}
+  #   name: Call Kubernetes Child Template
+  #   action: scaffolder:template
+  #   input:
+  #     templateRef: url:https://raw.githubusercontent.com/Sheetal-Shetty/CDC12_nov7/main/template.yaml
+  #     values:
+  #       repoUrl: ${{ parameters.repoUrl }}
+  #       manifest: ${{ parameters.extra.manifest }}
+  - id: deploy-kubernetes
+    name: Run Kubernetes Deployment Child Template
+    if: ${{ parameters.stack == 'Kubernetes' }}
+    action: scaffolder:template:fetch
     input:
-      templateRef: url:https://raw.githubusercontent.com/Sheetal-Shetty/CDC12_nov7/main/template.yaml
+      url: "https://github.com/Sheetal-Shetty/CDC12_nov7.git"
+      path: "/template.yaml"
       values:
-        repoUrl: ${{ parameters.repoUrl }}
-        manifest: ${{ parameters.extra.manifest }}
+        repoUrl: ${{ parameters.extraFields.repoUrl }}
+        DeploymentFile: ${{ parameters.extraFields.DeploymentFile }}
+        ServiceFile: ${{ parameters.extraFields.ServiceFile }}
+        Namespace: ${{ parameters.extraFields.Namespace }}
