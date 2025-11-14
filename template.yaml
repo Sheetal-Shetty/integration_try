@@ -187,8 +187,8 @@ spec:
     if: ${{ parameters.stack == 'Kubernetes' }}
     action: scaffolder:template:fetch
     input:
-      url: "https://github.com/Sheetal-Shetty/CDC12_nov7.git"
-      path: "/template.yaml"
+      url: "https://github.com/Sheetal-Shetty/integration_try.git"
+      path: "/kubernetes.yaml"
       values:
         repoUrl: ${{ parameters.extraFields.repoUrl }}
         DeploymentFile: ${{ parameters.extraFields.DeploymentFile }}
