@@ -1,0 +1,184 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: Github-pages-deploy-from-github
+  title: Backstage Driven Internal Developer Platform
+  description: Automates website deployment using Docker containers or GitHub Pages hosting.
+spec:
+  owner: user:guest
+  type: service
+
+  
+  parameters:
+    - title: GitHub Repository URL
+      required: 
+        - Github_URL
+        #- Dockerfile
+        #- Port
+      properties:
+        Github_URL:
+          title: Enter you Github URL
+          type: string
+          description: Enter the github URL where your code exists
+          ui:autofocus: true
+
+    - title: Select where you want to deploy your code
+      required:
+        - stack
+      properties:
+        stack:
+          title: Select from below list
+          type: string
+          enum:
+            - Docker
+            - Github pages
+            - Baremetal
+            - Kubernetes
+  
+    - title: Enter below details
+      dependencies:
+        stack:
+          oneOf:
+            - properties:
+                stack:
+                  const: Docker
+                extraFields:          # 👈 wrap everything else inside a schema key
+                  title: Enter the details
+                  type: object
+                  properties:
+                    Dockerfile:
+                      title: Enter the Path of Dockerfile
+                      type: string
+                      description: Enter the Dockerfile path (e.g. build/Dockerfile or enter Dockerfile if it is in root) 
+                      default: "Dockerfile" 
+                    Port:
+                      title: Enter the Port number
+                      type: integer
+                      minimum: 1
+                      maximum: 65535
+                      description: Enter the Port number of your application (e.g. 80/3000/5000)
+  
+            - properties:
+                stack:
+                  const: Github pages
+                extraFields:
+                  type: object
+                  properties: 
+                    # Github:
+                    #   title: Enter the Path of Github Url
+                    #   type: string
+                    #   description: Enter the Github URL 
+                      
+                      
+                    GithubToken:
+                      title: Enter the Github Token
+                      type: string
+                      description: Enter the token
+                       
+  
+            - properties:
+                stack:
+                  const: Baremetal
+                extraFields:          
+                  title: Enter the details
+                  type: object
+                  properties:
+                    PlaybookPath:
+                      title: Enter the Path of PlaybookPath
+                      type: string
+                      description: Enter the PlaybookPath
+                      default: "playbook.yml" 
+                    HostsPath:
+                      title: Enter the Path of Hosts file
+                      type: string
+                      description: Enter the Hosts file
+                      default: "hosts" 
+  
+            - properties:
+                stack:
+                  const: Kubernetes
+                extraFields:
+                  title: Kubernetes Deployment Details
+                  type: object
+                  properties:
+                    DeploymentFile:
+                      title: Deployment Manifest Path
+                      type: string
+                      description: Path to your deployment YAML file (relative to repo)
+                      default: "deployment.yaml"
+                    ServiceFile:
+                      title: Service Manifest Path
+                      type: string
+                      description: Path to your service YAML file (relative to repo)
+                      default: "service.yaml"
+                    Namespace:
+                      title: Kubernetes Namespace (optional)
+                      type: string
+                      description: Namespace to deploy into (leave blank for default)
+                      default: "default"
+          
+ 
+  steps:
+  # -------------------------------
+  # 🚀 BAREMETAL (ANSIBLE)
+  # -------------------------------
+  - id: call-baremetal-template
+    if: ${{ parameters.stack == 'Baremetal' }}
+    name: Execute Baremetal Deployment Flow
+    action: scaffolder:template
+    input:
+      templateRef: ./child-ansible-baremetal.yaml
+      values:
+        Github_URL: ${{ parameters.Github_URL }}
+        PlaybookPath: ${{ parameters.extraFields.PlaybookPath }}
+        HostsPath: ${{ parameters.extraFields.HostsPath }}
+  - id: docker-template
+    if: ${{ parameters.method == 'Docker' }}
+    name: Call Docker Child Template
+    action: scaffolder:template
+    input:
+      templateRef: url:https://raw.githubusercontent.com/<YOUR_ORG>/<YOUR_REPO>/main/docker-child.yaml
+      values:
+        repoUrl: ${{ parameters.repoUrl }}
+        Dockerfile: ${{ parameters.extra.Dockerfile }}
+        port: ${{ parameters.extra.port }}
+
+    # -----------------------------------------------------
+    # GitHub Pages Child Template Execution
+    # -----------------------------------------------------
+  - id: ghpages-template
+    if: ${{ parameters.method == 'Github Pages' }}
+    name: Call GitHub Pages Child Template
+    action: scaffolder:template
+    input:
+      templateRef: url:https://raw.githubusercontent.com/<YOUR_ORG>/<YOUR_REPO>/main/github-pages-child.yaml
+      values:
+        repoUrl: ${{ parameters.repoUrl }}
+        token: ${{ parameters.extra.token }}
+
+    # -----------------------------------------------------
+    # Baremetal (Ansible) Child Template Execution
+    # -----------------------------------------------------
+  - id: baremetal-template
+    if: ${{ parameters.method == 'Baremetal' }}
+    name: Call Baremetal Child Template
+    action: scaffolder:template
+    input:
+      templateRef: url:https://raw.githubusercontent.com/<YOUR_ORG>/<YOUR_REPO>/main/baremetal-child.yaml
+      values:
+        repoUrl: ${{ parameters.repoUrl }}
+        playbook: ${{ parameters.extra.playbook }}
+        hosts: ${{ parameters.extra.hosts }}
+
+    # -----------------------------------------------------
+    # Kubernetes Child Template Execution
+    # -----------------------------------------------------
+  - id: kubernetes-template
+    if: ${{ parameters.method == 'Kubernetes' }}
+    name: Call Kubernetes Child Template
+    action: scaffolder:template
+    input:
+      templateRef: url:https://raw.githubusercontent.com/Sheetal-Shetty/CDC12_nov7/main/template.yaml
+      values:
+        repoUrl: ${{ parameters.repoUrl }}
+        manifest: ${{ parameters.extra.manifest }}
