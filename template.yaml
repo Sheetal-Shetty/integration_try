@@ -182,13 +182,24 @@ spec:
   #     values:
   #       repoUrl: ${{ parameters.repoUrl }}
   #       manifest: ${{ parameters.extra.manifest }}
+  # - id: deploy-kubernetes
+  #   name: Run Kubernetes Deployment Child Template
+  #   if: ${{ parameters.stack == 'Kubernetes' }}
+  #   action: scaffolder:template:fetch
+  #   input:
+  #     url: "https://github.com/Sheetal-Shetty/integration_try.git"
+  #     path: "/kubernetes.yaml"
+  #     values:
+  #       repoUrl: ${{ parameters.extraFields.repoUrl }}
+  #       DeploymentFile: ${{ parameters.extraFields.DeploymentFile }}
+  #       ServiceFile: ${{ parameters.extraFields.ServiceFile }}
+  #       Namespace: ${{ parameters.extraFields.Namespace }}
   - id: deploy-kubernetes
     name: Run Kubernetes Deployment Child Template
     if: ${{ parameters.stack == 'Kubernetes' }}
-    action: scaffolder:template:fetch
+    action: scaffolder:template
     input:
-      url: "https://github.com/Sheetal-Shetty/integration_try.git"
-      path: "/kubernetes.yaml"
+      templateRef: github:Sheetal-Shetty/CDC12_nov7/kubernetes.yaml
       values:
         repoUrl: ${{ parameters.extraFields.repoUrl }}
         DeploymentFile: ${{ parameters.extraFields.DeploymentFile }}
