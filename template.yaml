@@ -12,11 +12,11 @@ spec:
   parameters:
     - title: GitHub Repository URL
       required: 
-        - Github_URL
+        - repoUrl
         #- Dockerfile
         #- Port
       properties:
-        Github_URL:
+        repoUrl:
           title: Enter you Github URL
           type: string
           description: Enter the github URL where your code exists
