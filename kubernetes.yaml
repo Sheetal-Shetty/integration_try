@@ -1,0 +1,74 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: kubernetes-deploy-child
+  title: Kubernetes Deployment Child Template
+  description: Deploy an application to Kubernetes using manifests passed from parent.
+spec:
+  owner: user:guest
+  type: service
+
+  parameters:
+    - title: Kubernetes Deployment Configuration
+      required:
+        - repoUrl
+        - DeploymentFile
+        - ServiceFile
+      properties:
+        repoUrl:
+          type: string
+        DeploymentFile:
+          type: string
+        ServiceFile:
+          type: string
+        Namespace:
+          type: string
+
+  steps:
+    - id: fetch-repo
+      name: Fetch Application Repository
+      action: fetch:plain
+      input:
+        url: "{{ parameters.repoUrl }}"
+        targetPath: ./kube
+
+    - id: apply-kube
+      name: Deploy to Kubernetes via Minikube
+      #if: ${{ parameters.stack == 'Kubernetes' }}
+      action: shell:run
+      input:
+        cwd: ./kube
+        command: bash
+        args:
+          - -c
+          - |
+            set -e
+            echo "🚀 Applying manifests to Minikube cluster..."
+
+            NAMESPACE="${{ parameters.Namespace }}"
+            DEPLOY="${{ parameters.DeploymentFile }}"
+            SERVICE="${{ parameters.ServiceFile }}"
+
+            echo "Using namespace: $NAMESPACE"
+            kubectl apply -f "$DEPLOY" -n "$NAMESPACE"
+            kubectl apply -f "$SERVICE" -n "$NAMESPACE"
+
+            echo "✅ Deployed successfully!"
+            echo "🌐 Fetching service URL..."
+            minikube service --url -n "$NAMESPACE" $(kubectl get svc -n "$NAMESPACE" -o jsonpath='{.items[0].metadata.name}') || true
+  #   - id: deploy-k8s
+  #     name: Deploy to Kubernetes
+  #     action: exec:command
+  #     input:
+  #       command: |
+  #         NAMESPACE="{{ parameters.Namespace }}"
+  #         if [ -z "$NAMESPACE" ]; then NAMESPACE="default"; fi
+
+  #         echo "Deploying to namespace: $NAMESPACE"
+
+  #         kubectl apply -f "./app/{{ parameters.DeploymentFile }}" -n "$NAMESPACE"
+  #         kubectl apply -f "./app/{{ parameters.ServiceFile }}" -n "$NAMESPACE"
+
+  # output:
+  #   text:
+  #     - "Deployment completed into namespace: {{ parameters.Namespace }}"
